@@ -1,4 +1,4 @@
-package = "kong-plugin-myplugin"  -- TODO: rename, must match the info in the filename of this rockspec!
+package = "kong-plugin-custom-request-transformer"  -- TODO: rename, must match the info in the filename of this rockspec!
                                   -- as a convention; stick to the prefix: `kong-plugin-`
 version = "0.1.0-1"               -- TODO: renumber, must match the info in the filename of this rockspec!
 -- The version '0.1.0' is the source code version, the trailing '1' is the version of this rockspec.
@@ -28,7 +28,7 @@ build = {
   type = "builtin",
   modules = {
     -- TODO: add any additional files that the plugin consists of
-    ["kong.plugins."..pluginName..".handler"] = "kong/plugins/"..pluginName.."/handler.lua",
-    ["kong.plugins."..pluginName..".schema"] = "kong/plugins/"..pluginName.."/schema.lua",
+    ["kong.plugins.kong-plugin-custom-request-transformer.handler"] = "kong/plugins/kong-plugin-custom-request-transformer/handler.lua",
+    ["kong.plugins.kong-plugin-custom-request-transformer.schema"] = "kong/plugins/kong-plugin-custom-request-transformer/schema.lua",
   }
 }

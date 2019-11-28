@@ -111,7 +111,7 @@ table.insert(colon_strings_array_record_plus_uri.fields, uri)
 
 
 return {
-  name = "request-modifier",
+  name = "kong-plugin-custom-request-transformer",
   fields = {
     { config = {
         type = "record",

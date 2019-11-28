@@ -1,4 +1,4 @@
-local access = require "kong.plugins.request-modifier.access"
+local access = require "kong.plugins.kong-plugin-custom-request-transformer.access"
 
 
 local RequestModifierHandler = {

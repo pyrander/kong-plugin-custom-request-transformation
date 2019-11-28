@@ -149,11 +149,11 @@ local function iter(config_array)
 
     local res, err = param_value(current_value, config_array)
     if err then
-      return error("[request-modifier] failed to render the template ",
+      return error("[kong-plugin-custom-request-transformer] failed to render the template ",
         current_value, ", error:", err)
     end
 
-    kong.log.debug("[request-modifier] template `", current_value,
+    kong.log.debug("[kong-plugin-custom-request-transformer] template `", current_value,
       "` rendered to `", res, "`")
 
     return i, current_name, res
@@ -493,11 +493,11 @@ local function transform_uri(conf)
 
     local res, err = param_value(conf.replace.uri, conf.replace)
     if err then
-      return error("[request-modifier] failed to render the template ",
+      return error("[kong-plugin-custom-request-transformer] failed to render the template ",
         conf.replace.uri, ", error:", err)
     end
 
-    kong.log.debug(DEBUG, "[request-modifier] template `", conf.replace.uri,
+    kong.log.debug(DEBUG, "[kong-plugin-custom-request-transformer] template `", conf.replace.uri,
       "` rendered to `", res, "`")
 
     if res then
