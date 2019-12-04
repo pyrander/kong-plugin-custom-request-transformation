@@ -510,8 +510,8 @@ function _M.execute(conf)
   clear_environment()
   transform_uri(conf)
   transform_method(conf)
-  transform_headers(conf)
   transform_body(conf)
+  transform_headers(conf)
   transform_querystrings(conf)
 end
 
