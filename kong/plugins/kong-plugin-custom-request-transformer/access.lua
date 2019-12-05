@@ -295,7 +295,6 @@ local function transform_headers(conf)
       headers[name] = value
     end
   end
-  headers['custommodifier'] = true
 
   -- Append header(s)
   for _, name, value in iter(conf.append.headers) do
