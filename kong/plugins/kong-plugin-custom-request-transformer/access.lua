@@ -34,6 +34,87 @@ local CONTENT_TYPE = "content-type"
 local HOST = "host"
 local JSON, MULTI, ENCODED = "json", "multi_part", "form_encoded"
 local EMPTY = pl_tablex.readonly({})
+local templatePrefix = "-"
+local templateSuffix ="-"
+
+local function ends_with(str, ending)
+  return ending == "" or str:sub(-#ending) == ending
+end
+
+local function begins_with(str, beginning)
+  return beginning == "" or str:sub(1,#beginning) == beginning
+end
+
+local function isTemplate(valueTag)
+  return begins_with(valueTag,templatePrefix) and ends_with(valueTag,templateSuffix) 
+end
+
+local function stripTemplate(valueTag)
+  local innerValue = valueTag:sub(#templatePrefix+1)
+  return innerValue:gsub("%"..templateSuffix,"")
+end
+
+local function csplit(str,sep)
+  local ret={}
+  local n=1
+  for w in str:gmatch("([^"..sep.."]*)") do
+     ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
+     if w=="" then
+        n = n + 1
+     end -- step forwards on a blank but not a string
+  end
+  return ret
+end
+
+local function getTable(tbl,tableKey)
+  return tbl[tableKey]
+end
+
+local function getItemfromTable(table, itemKey)
+  if table ~= nil then   
+      return table[itemKey]
+  else
+      return nil
+  end
+end
+
+local function isTable(suspectTable,tableName, parentField)
+  if(suspectTable == nil) then
+      return false
+  else
+      return (type(suspectTable) == "table")
+  end
+end
+
+local function getNestedItems(table, keyParts, index)
+  local itemKey = keyParts[index+1]
+  local obtainedItem = nil
+  if itemKey ~=nil then
+      obtainedItem = getItemfromTable(table,itemKey)
+      if isTable(obtainedItem,itemKey,keyParts[index]) then
+          return getNestedItems(obtainedItem,keyParts,index+1)
+      end
+  end
+  return obtainedItem
+end
+
+local function getItem(tbl,valueTag)
+  local innerValue = stripTemplate(valueTag)
+  local keyParts = csplit(innerValue,"%.")
+  local tableKey = keyParts[1]
+  local containerTable = getTable(tbl,tableKey)
+  return getNestedItems(containerTable,keyParts,1)
+end
+
+local function getValue(tbl,valueTag)
+  if isTemplate(valueTag) then
+      local item = getItem(tbl,valueTag)
+      return item
+  else
+      kong.log.info("[kong-plugin-custom-request-transformer] valueTag: ", valueTag)
+      return valueTag
+  end
+end
 
 local function parse_json(body)
   if body then
@@ -97,7 +178,7 @@ local __meta_environment = {
 }
 
 template_environment = setmetatable({
-  -- here we can optionally add functions to expose to the sandbox, eg:
+  -- here we can optionally add functions to expose t1o the sandbox, eg:
   -- tostring = tostring,  -- for example
 }, __meta_environment)
 
@@ -276,12 +357,18 @@ local function transform_json_body(conf, body, content_length)
   local removed, renamed, replaced, added, appended = false, false, false, false, false
   local content_length = (body and #body) or 0
   local parameters = parse_json(body)
+  local tbl = {}
+  local headers = get_headers()
+
   if parameters == nil then
     if content_length > 0 then
       return false, nil
     end
     parameters = {}
   end
+
+  tbl["header"]=headers
+  tbl["body"]=parameters
 
   if content_length > 0 and #conf.remove.body > 0 then
     for _, name, value in iter(conf.remove.body) do
@@ -311,7 +398,7 @@ local function transform_json_body(conf, body, content_length)
   if #conf.add.body > 0 then
     for _, name, value in iter(conf.add.body) do
       if not parameters[name] then
-        parameters[name] = value
+        parameters[name] = getValue(tbl,value)
         added = true
       end
     end
