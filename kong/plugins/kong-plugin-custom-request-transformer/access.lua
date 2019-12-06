@@ -116,6 +116,20 @@ local function getValue(tbl,valueTag)
   end
 end
 
+local function addtoBody(body,destiny,value,index)
+  local destinyParts = csplit(destiny,"%.")
+  local name = destinyParts[index]
+  if(#destinyParts>index) then
+      if not body[name] then
+          body[name] = {}
+      end
+      addtoBody(body[name],destiny,value,index+1)
+  else
+      body[name] = value
+  end
+  return body
+end
+
 local function parse_json(body)
   if body then
     local status, res = pcall(cjson.decode, body)
@@ -397,7 +411,7 @@ local function transform_json_body(conf, body, content_length)
   if #conf.add.body > 0 then
     for _, name, value in iter(conf.add.body) do
       if not parameters[name] then
-        parameters[name] = getValue(tbl,value)
+        parameters = addtoBody(parameters[name],name,getValue(tbl,value),1)
         added = true
       end
     end

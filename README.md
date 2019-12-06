@@ -10,12 +10,12 @@ example:
     "name": "kong-plugin-custom-request-transformer",
     "config": {
         "add": {
-        	"body":["traceId:-header.Traceid-"]
+        	"body":["meta.traceId:-header.Traceid-"]
         }
     }
 }
 ```
-+ this will copy the Traceid header field to a field named traceId on added to the body
++ this will copy the Traceid header field to a field named traceId inside the object field meta on added to the body, thi ssupport multiple nesting on the body, creating objects if required: syntax root.child.grandchild.<any nesting level>.targetfield on the left side of the :
 
 This template was designed to work with the `kong-vagrant`
 [development environment](https://github.com/Mashape/kong-vagrant). Please
