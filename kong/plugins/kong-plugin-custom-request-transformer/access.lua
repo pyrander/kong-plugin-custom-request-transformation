@@ -591,6 +591,20 @@ local function transform_method(conf)
         end
       end
     end
+
+    if conf.http_method == "POST" then
+      local strBody = get_raw_body()
+      local body = parse_json(strBody)
+      if body == nil then
+        body = {}
+      end
+      local querystring = get_uri_args()
+      for name, value in pairs(querystring) do
+        body[name]=value;
+      end
+      set_uri_args({})
+     set_raw_body(cjson.encode(body))
+    end
   end
 end
 
