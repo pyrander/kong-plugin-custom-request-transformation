@@ -367,7 +367,7 @@ local function transform_querystrings(conf)
 end
 
 local function transform_json_body(conf, body, content_length)
-  local removed, renamed, replaced, added, appended = false, false, false, false, false
+  local wrapped, removed, renamed, replaced, added, appended = false, false, false, false, false, false
   local content_length = (body and #body) or 0
   local parameters = parse_json(body)
   local tbl = {}
@@ -382,6 +382,12 @@ local function transform_json_body(conf, body, content_length)
 
   tbl["header"]=headers
   tbl["body"]=parameters
+
+  if content_length > 0 and #conf.wrap.body > 0 then
+    parameters ={[conf.wrap.body]=parameters}
+    wrapped = true
+  end
+
 
   if content_length > 0 and #conf.remove.body > 0 then
     for _, name, value in iter(conf.remove.body) do
@@ -411,7 +417,7 @@ local function transform_json_body(conf, body, content_length)
   if #conf.add.body > 0 then
     for _, name, value in iter(conf.add.body) do
       if not parameters[name] then
-        parameters = addtoBody(parameters[name],name,getValue(tbl,value),1)
+        parameters = addtoBody(parameters,name,getValue(tbl,value),1)
         added = true
       end
     end
@@ -425,7 +431,7 @@ local function transform_json_body(conf, body, content_length)
     end
   end
 
-  if removed or renamed or replaced or added or appended then
+  if wrapped or removed or renamed or replaced or added or appended then
     return true, cjson.encode(parameters)
   end
 end

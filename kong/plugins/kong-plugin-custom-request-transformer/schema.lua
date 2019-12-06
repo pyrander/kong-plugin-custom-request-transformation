@@ -63,6 +63,12 @@ local strings_array_record = {
   },
 }
 
+local strings_array_part = {
+  type = "record",
+  fields = {
+    { body = { type = "string" }}
+  },
+}
 
 local colon_strings_array = {
   type = "array",
@@ -116,6 +122,7 @@ return {
     { config = {
         type = "record",
         fields = {
+          { wrap     = strings_array_part },
           { http_method = typedefs.http_method },
           { remove  = strings_array_record },
           { rename  = colon_rename_strings_array_record },
