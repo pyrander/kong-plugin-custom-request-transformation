@@ -16,6 +16,7 @@ local get_raw_body = kong.request.get_raw_body
 local set_raw_body = kong.service.request.set_raw_body
 local encode_args = ngx.encode_args
 local ngx_decode_args = ngx.decode_args
+local jwt_decoder = require "kong.plugins.kong-plugin-custom-request-transformer.jwt_parser"
 local type = type
 local str_find = string.find
 local pcall = pcall
@@ -136,6 +137,30 @@ local function parse_json(body)
     if status then
       return res
     end
+  end
+end
+
+local function get_jwt_decode(headers)
+  local auth = headers['Authorization'];
+  local token = {}
+  local err
+  if(auth == nil) then
+      return nil
+  else
+      if(begins_with(auth,"Bearer  ")) then
+        auth = auth:gsub("Bearer  ","")
+        token, err = jwt_decoder:new(auth)
+        if err then
+          kong.log.err(err)
+        end
+        if (token == nil) then
+          return nil
+        else
+          return token
+        end
+      else
+        return nil
+      end
   end
 end
 
@@ -372,6 +397,7 @@ local function transform_json_body(conf, body, content_length)
   local parameters = parse_json(body)
   local tbl = {}
   local headers = get_headers()
+  local jwtdecode = get_jwt_decode(headers)
 
   if parameters == nil then
     if content_length > 0 then
@@ -382,6 +408,7 @@ local function transform_json_body(conf, body, content_length)
 
   tbl["header"]=headers
   tbl["body"]=parameters
+  tbl["token"]=jwtdecode
 
   if content_length > 0 and #conf.wrap.body > 0 then
     parameters ={[conf.wrap.body]=parameters}
