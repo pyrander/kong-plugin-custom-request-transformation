@@ -52,7 +52,7 @@ end
 
 local function stripTemplate(valueTag)
   local innerValue = valueTag:sub(#templatePrefix+1)
-  return innerValue:gsub("%"..templateSuffix,"")
+  return innerValue:sub(1,-(#templateSuffix+1))
 end
 
 local function csplit(str,sep)
@@ -140,15 +140,27 @@ local function parse_json(body)
   end
 end
 
+local function get_context()
+  local context = {}
+  local realIp = ngx.var.remote_addr
+  local timestamp = os.date("!%Y-%m-%dT%H:%M:%S.000Z%z")
+  if realIp ~= nil then
+    context["realIp"] = realIp
+    context["timestamp"] = timestamp
+  end
+  return context
+end
+
 local function get_jwt_decode(headers)
   local auth = headers['Authorization'];
   local token = {}
   local err
   if(auth == nil) then
-      return nil
+      return {}
   else
-      if(begins_with(auth,"Bearer  ")) then
-        auth = auth:gsub("Bearer  ","")
+      if(begins_with(auth,"Bearer ")) then
+        auth = auth:gsub("Bearer","")
+        auth = string.gsub(auth, "%s+", "")
         token, err = jwt_decoder:new(auth)
         if err then
           kong.log.err(err)
@@ -159,7 +171,7 @@ local function get_jwt_decode(headers)
           return token
         end
       else
-        return nil
+        return {}
       end
   end
 end
@@ -398,6 +410,7 @@ local function transform_json_body(conf, body, content_length)
   local tbl = {}
   local headers = get_headers()
   local jwtdecode = get_jwt_decode(headers)
+  local context = get_context()
 
   if parameters == nil then
     if content_length > 0 then
@@ -409,6 +422,7 @@ local function transform_json_body(conf, body, content_length)
   tbl["header"]=headers
   tbl["body"]=parameters
   tbl["token"]=jwtdecode
+  tbl["context"]=context
 
   if content_length > 0 and #conf.wrap.body > 0 then
     parameters ={[conf.wrap.body]=parameters}
