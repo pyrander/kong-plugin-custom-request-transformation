@@ -12,6 +12,7 @@ local set_header = kong.service.request.set_header
 local get_headers = kong.request.get_headers
 local set_headers = kong.service.request.set_headers
 local set_method = kong.service.request.set_method
+local get_method = kong.request.get_method
 local get_raw_body = kong.request.get_raw_body
 local set_raw_body = kong.service.request.set_raw_body
 local encode_args = ngx.encode_args
@@ -423,6 +424,10 @@ local function transform_json_body(conf, body, content_length)
   tbl["body"]=parameters
   tbl["token"]=jwtdecode
   tbl["context"]=context
+  
+  if conf.wrap.body == nil then
+    conf.wrap.body = ""
+  end
 
   if content_length > 0 and #conf.wrap.body > 0 then
     parameters ={[conf.wrap.body]=parameters}
@@ -604,7 +609,10 @@ end
 
 local function transform_method(conf)
   if conf.http_method then
-    set_method(conf.http_method:upper())
+    local old_method = get_method()
+    if old_method == "GET" then
+      set_method(conf.http_method:upper())
+    end
     if conf.http_method == "GET" or conf.http_method == "HEAD" or conf.http_method == "TRACE" then
       local content_type_value = get_header(CONTENT_TYPE)
       local content_type = get_content_type(content_type_value)
@@ -633,7 +641,7 @@ local function transform_method(conf)
       end
     end
 
-    if conf.http_method == "POST" then
+    if conf.http_method == "POST" and old_method == "GET"  then
       local strBody = get_raw_body()
       local body = parse_json(strBody)
       if body == nil then
